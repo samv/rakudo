@@ -20,7 +20,8 @@ MAIN: {
     # Determine the revision of Parrot we require
     open my $REQ, "build/PARROT_REVISION"
       || die "cannot open build/PARROT_REVISION\n";
-    my $required = 0+<$REQ>;
+    my $required = <$REQ>;
+    chomp($required);
     close $REQ;
 
     # Update/generate parrot build if needed
@@ -51,7 +52,8 @@ MAIN: {
     if (!%config) { 
         $parrot_errors .= "Unable to locate parrot_config\n"; 
     }
-    elsif ($required > $config{'revision'}) {
+    elsif ( ($required =~ m{^\d+$} and $required < $config{'revision'}) or
+	    ( ver_cmp($required, $config{'VERSION'}) < 0 ) ) {
         $parrot_errors .= "Parrot revision r$required required (currently r$config{'revision'})\n";
     }
 
@@ -160,6 +162,17 @@ General Options:
 END
 
     return;
+}
+
+sub ver_cmp {
+    my ($ver_a, $ver_b) = @_;
+    my @ver_a = split /\./, $ver_a;
+    my @ver_b = split /\./, $ver_b;
+    while (@ver_a and @ver_b) {
+	my $x = (shift @ver_a) <=> (shift @ver_b);
+	return $x if $x;
+    }
+    return (@ver_a <=> @ver_b);
 }
 
 # Local Variables:
